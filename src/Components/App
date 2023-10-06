@@ -1,0 +1,98 @@
+import React, { useState, useEffect } from 'react';
+
+function App() {
+  const [authToken, setAuthToken] = useState(null);
+  const [trains, setTrains] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Function to authenticate and obtain the token
+  const authenticate = async () => {
+    try {
+      const response = await fetch('http://20.244.56.144/train/auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          companyName: 'Train Central',
+          clientID: 'b46128a0-fbde-4c16-a4b1-6ae6ad718e27',
+          ownerName: 'Ram',
+          ownerEmail: 'ram@abc.edu',
+          rollNo: '1',
+          clientSecret: 'XOyoIORPayKBODAN',
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Assuming the token is in the response data
+        const token = data.access_token;
+        setAuthToken(token);
+      } else {
+        console.error('Authentication failed.');
+      }
+    } catch (error) {
+      console.error('Error while authenticating:', error);
+    }
+  };
+
+  // Function to fetch all trains
+  const fetchTrains = async () => {
+    try {
+      if (!authToken) {
+        console.error('Authentication token is missing.');
+        return;
+      }
+
+      const response = await fetch('http://20.244.56.144/train/trains', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${authToken}`, // Include the authorization token in the header
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setTrains(data);
+        setLoading(false);
+      } else {
+        console.error('Failed to fetch trains data.');
+      }
+    } catch (error) {
+      console.error('Error while fetching trains:', error);
+    }
+  };
+
+  useEffect(() => {
+    // Call the authentication function when the component mounts
+    authenticate();
+  }, []);
+
+  useEffect(() => {
+    // Call the fetchTrains function after authentication
+    if (authToken) {
+      fetchTrains();
+    }
+  }, [authToken]);
+
+  return (
+    <div className="App">
+      {loading ? (
+        <p>Loading...</p>
+      ) : (
+        <div>
+          <h1>All Trains</h1>
+          <ul>
+            {trains.map((train) => (
+              <li key={train.trainNumber}>
+                {train.trainName} - {train.trainNumber}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default App;
